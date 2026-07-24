@@ -266,7 +266,7 @@ export default function Navbar() {
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95, y: 8 }}
                     transition={{ duration: 0.2 }}
-                    className="absolute left-0 top-full mt-2 z-110 w-52 bg-background/95 backdrop-blur-xl border border-primary/20 rounded-2xl p-2 shadow-2xl space-y-1 text-left"
+                    className="absolute left-1/2 -translate-x-1/3 top-full mt-2 z-110 w-52 bg-background/95 backdrop-blur-xl border border-primary/20 rounded-2xl p-2 shadow-2xl space-y-1 text-left"
                   >
                     <div className="px-3 py-1.5 border-b border-border/60">
                       <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground block">
