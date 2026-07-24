@@ -50,15 +50,18 @@ export default function Footer() {
             <ul className="space-y-3 text-sm">
               <li className="flex items-start space-x-3">
                 <MapPin className="h-5 w-5 text-secondary flex-shrink-0 mt-0.5" />
-                <span className="text-primary-foreground/80">Parque Industrial, Manzana 12, Santa Cruz, Bolivia</span>
+                <span className="text-primary-foreground/80">Calle 16 de Julio # 748, Cochabamba, Bolivia</span>
               </li>
-              <li className="flex items-center space-x-3">
-                <Phone className="h-5 w-5 text-secondary flex-shrink-0" />
-                <span className="text-primary-foreground/80">+591 3 3456789</span>
+              <li className="flex items-start space-x-3">
+                <Phone className="h-5 w-5 text-secondary flex-shrink-0 mt-0.5" />
+                <div className="text-xs text-primary-foreground/80 space-y-1">
+                  <p><strong className="text-white">Cochabamba:</strong> 77112500 - 77112504</p>
+                  <p><strong className="text-white">Sucre:</strong> 70335651 - 77440111</p>
+                </div>
               </li>
               <li className="flex items-center space-x-3">
                 <Mail className="h-5 w-5 text-secondary flex-shrink-0" />
-                <span className="text-primary-foreground/80">contacto@industriasvivo.com</span>
+                <span className="text-primary-foreground/80 text-xs">contacto@industriasvivo.com</span>
               </li>
             </ul>
           </div>
@@ -69,19 +72,42 @@ export default function Footer() {
             <div className="space-y-3 text-sm mb-6">
               <div className="flex items-center space-x-3">
                 <Clock className="h-5 w-5 text-secondary flex-shrink-0" />
-                <div className="text-primary-foreground/80">
+                <div className="text-primary-foreground/80 text-xs">
                   <p>Lunes a Viernes: 08:00 - 18:00</p>
                   <p>Sábados: 08:30 - 12:30</p>
                 </div>
               </div>
             </div>
             <h4 className="text-white font-semibold mb-3 text-sm uppercase tracking-wider">Síguenos</h4>
-            <div className="flex space-x-4">
-              <a href="#" className="hover:text-white p-2 rounded-full bg-white/5 hover:bg-white/10 transition-colors">
+            <div className="flex space-x-3">
+              <a 
+                href="https://www.facebook.com/IndustriasVivo/" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="hover:text-white p-2.5 rounded-full bg-white/10 hover:bg-white/20 transition-all active:scale-95"
+                title="Facebook Industrias Vivo"
+              >
                 <Facebook className="h-5 w-5" />
               </a>
-              <a href="#" className="hover:text-white p-2 rounded-full bg-white/5 hover:bg-white/10 transition-colors">
+              <a 
+                href="https://www.instagram.com/IndustriasVivo" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="hover:text-white p-2.5 rounded-full bg-white/10 hover:bg-white/20 transition-all active:scale-95"
+                title="Instagram Industrias Vivo"
+              >
                 <Instagram className="h-5 w-5" />
+              </a>
+              <a 
+                href="https://www.tiktok.com/@industrias.vivo" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="hover:text-white p-2.5 rounded-full bg-white/10 hover:bg-white/20 transition-all active:scale-95 flex items-center justify-center"
+                title="TikTok Industrias Vivo"
+              >
+                <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24">
+                  <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 1 1-5.2-1.74 2.89 2.89 0 0 1 2.31-2.84V7.6a6.34 6.34 0 0 0-5.6 6.31 6.34 6.34 0 0 0 10.74 4.54 6.3 6.3 0 0 0 1.95-4.57V8.71a8.3 8.3 0 0 0 5.02 1.66V6.92a4.83 4.83 0 0 1-2-0.23z"/>
+                </svg>
               </a>
             </div>
           </div>

@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { Product, Category, Brand, MOCK_PRODUCTS, MOCK_CATEGORIES, MOCK_BRANDS } from '@/types/product.types'
+import { Product, Category, Brand, BranchStock, MOCK_PRODUCTS, MOCK_CATEGORIES, MOCK_BRANDS } from '@/types/product.types'
 
 interface ProductStoreState {
   products: Product[]
@@ -8,6 +8,8 @@ interface ProductStoreState {
   brands: Brand[]
   addProduct: (product: Omit<Product, 'id'>) => void
   updateProduct: (id: string, product: Partial<Product>) => void
+  updateBranchStock: (productId: string, branchId: keyof BranchStock, newStock: number) => void
+  transferBranchStock: (productId: string, fromBranchId: keyof BranchStock, toBranchId: keyof BranchStock, quantity: number) => void
   deleteProduct: (id: string) => void
   duplicateProduct: (id: string) => void
   toggleProductStatus: (id: string) => void
@@ -40,6 +42,57 @@ export const useProductStore = create<ProductStoreState>()(
       updateProduct: (id, updatedFields) => {
         set({
           products: get().products.map(p => p.id === id ? { ...p, ...updatedFields } : p)
+        })
+      },
+
+      updateBranchStock: (productId, branchId, newStock) => {
+        set({
+          products: get().products.map((p) => {
+            if (p.id !== productId) return p
+            const currentBranches: BranchStock = p.branchesStock || {
+              'cocha-1': Math.floor(p.stock * 0.3),
+              'cocha-2': Math.floor(p.stock * 0.2),
+              'sucre-1': Math.floor(p.stock * 0.2),
+              'sucre-2': Math.floor(p.stock * 0.15),
+              'sucre-3': Math.floor(p.stock * 0.15)
+            }
+            const updatedBranches = { ...currentBranches, [branchId]: Math.max(0, newStock) }
+            const totalStock = Object.values(updatedBranches).reduce((a, b) => a + b, 0)
+            return {
+              ...p,
+              stock: totalStock,
+              branchesStock: updatedBranches
+            }
+          })
+        })
+      },
+
+      transferBranchStock: (productId, fromBranchId, toBranchId, quantity) => {
+        set({
+          products: get().products.map((p) => {
+            if (p.id !== productId) return p
+            const currentBranches: BranchStock = p.branchesStock || {
+              'cocha-1': Math.floor(p.stock * 0.3),
+              'cocha-2': Math.floor(p.stock * 0.2),
+              'sucre-1': Math.floor(p.stock * 0.2),
+              'sucre-2': Math.floor(p.stock * 0.15),
+              'sucre-3': Math.floor(p.stock * 0.15)
+            }
+            const availableInFrom = currentBranches[fromBranchId] || 0
+            const actualQty = Math.min(availableInFrom, Math.max(0, quantity))
+            
+            const updatedBranches: BranchStock = {
+              ...currentBranches,
+              [fromBranchId]: availableInFrom - actualQty,
+              [toBranchId]: (currentBranches[toBranchId] || 0) + actualQty
+            }
+            const totalStock = Object.values(updatedBranches).reduce((a, b) => a + b, 0)
+            return {
+              ...p,
+              stock: totalStock,
+              branchesStock: updatedBranches
+            }
+          })
         })
       },
 

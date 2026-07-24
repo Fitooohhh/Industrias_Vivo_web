@@ -17,7 +17,7 @@ export const useSettingsStore = create<SettingsState>()(
       freeShippingMin: 150,
       volumeDiscountMin: 200,
       volumeDiscountPercent: 10,
-      whatsappNumber: '+59171020304',
+      whatsappNumber: '+59177112500',
       supportEmail: 'contacto@industriasvivo.com',
       shippingCostDefault: 15,
 

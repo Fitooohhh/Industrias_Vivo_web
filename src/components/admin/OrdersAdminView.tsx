@@ -16,6 +16,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useOrdersStore, Order } from '@/store/useOrdersStore'
+import { CustomSelect } from '@/components/ui/custom-select'
 import { toast } from 'sonner'
 
 export default function OrdersAdminView() {
@@ -88,23 +89,23 @@ export default function OrdersAdminView() {
           />
         </div>
 
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <SlidersHorizontal className="h-4 w-4 text-muted-foreground" />
-          <select
+        <div className="w-full sm:w-60">
+          <CustomSelect
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="rounded-lg border bg-background px-3 py-1.5 text-xs font-semibold focus:border-primary outline-hidden"
-          >
-            <option value="all">Todos los Estados</option>
-            <option value="recibido">Recibidos</option>
-            <option value="pendiente_pago">Pendientes de Pago</option>
-            <option value="confirmado">Confirmados</option>
-            <option value="preparando">Preparando</option>
-            <option value="en_camino">En Camino</option>
-            <option value="listo_retiro">Listo para Retirar</option>
-            <option value="entregado">Entregados</option>
-            <option value="cancelado">Cancelados</option>
-          </select>
+            onChange={(val) => setStatusFilter(val)}
+            icon={<SlidersHorizontal className="h-3.5 w-3.5" />}
+            options={[
+              { value: 'all', label: 'Todos los Estados' },
+              { value: 'recibido', label: 'Recibidos' },
+              { value: 'pendiente_pago', label: 'Pendientes de Pago' },
+              { value: 'confirmado', label: 'Confirmados' },
+              { value: 'preparando', label: 'Preparando' },
+              { value: 'en_camino', label: 'En Camino' },
+              { value: 'listo_retiro', label: 'Listo para Retirar en Tienda' },
+              { value: 'entregado', label: 'Entregados en Tienda/Domicilio' },
+              { value: 'cancelado', label: 'Cancelados' }
+            ]}
+          />
         </div>
       </div>
 
@@ -227,20 +228,20 @@ export default function OrdersAdminView() {
               
               <div>
                 <label className="block text-[10px] font-bold text-muted-foreground mb-1 uppercase">Estado del Pedido</label>
-                <select
+                <CustomSelect
                   value={statusInput}
-                  onChange={(e) => setStatusInput(e.target.value as any)}
-                  className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-hidden"
-                >
-                  <option value="recibido">Recibido</option>
-                  <option value="pendiente_pago">Pendiente Pago</option>
-                  <option value="confirmado">Confirmado / Pago Aprobado</option>
-                  <option value="preparando">Preparando Despacho</option>
-                  <option value="en_camino">En Camino (Distribución)</option>
-                  <option value="listo_retiro">Listo para Retiro en Fábrica</option>
-                  <option value="entregado">Entregado</option>
-                  <option value="cancelado">Cancelado</option>
-                </select>
+                  onChange={(val) => setStatusInput(val as any)}
+                  options={[
+                    { value: 'recibido', label: 'Recibido' },
+                    { value: 'pendiente_pago', label: 'Pendiente Pago' },
+                    { value: 'confirmado', label: 'Confirmado / Pago Aprobado' },
+                    { value: 'preparando', label: 'Preparando Despacho' },
+                    { value: 'en_camino', label: 'En Camino (Distribución)' },
+                    { value: 'listo_retiro', label: 'Listo para Retiro en Tienda' },
+                    { value: 'entregado', label: 'Entregado' },
+                    { value: 'cancelado', label: 'Cancelado' }
+                  ]}
+                />
               </div>
 
               <div>

@@ -24,6 +24,7 @@ import { useCartStore } from '@/store/useCartStore'
 import { useUserStore } from '@/store/useUserStore'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useOrdersStore } from '@/store/useOrdersStore'
+import { useAppStore } from '@/store/useAppStore'
 import { toast } from 'sonner'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -44,6 +45,7 @@ const checkoutSchema = zod.object({
 type CheckoutFormValues = zod.infer<typeof checkoutSchema>
 
 export default function CheckoutClient() {
+  const { city } = useAppStore()
   const { items, getSubtotal, getDiscount, getShippingCost, getTotal, clearCart } = useCartStore()
   const { addresses } = useUserStore()
   const { user } = useAuthStore()
@@ -51,6 +53,7 @@ export default function CheckoutClient() {
 
   // State
   const [currentStep, setCurrentStep] = useState(1)
+  const [selectedBranch, setSelectedBranch] = useState<string>(city === 'cochabamba' ? 'cocha-1' : 'sucre-1')
   const [orderCompleted, setOrderCompleted] = useState<any>(null)
   const [qrFile, setQrFile] = useState<File | null>(null)
   const [mounted, setMounted] = useState(false)
@@ -354,12 +357,81 @@ export default function CheckoutClient() {
                     {errors.addressId && <span className="text-xs text-destructive">{errors.addressId.message}</span>}
                   </div>
                 ) : (
-                  <div className="p-4 border rounded-xl bg-muted/30 space-y-2">
-                    <span className="text-xs font-bold text-primary block">Punto de Retiro Oficial</span>
-                    <span className="text-sm font-bold text-foreground block">Industrias Vivo S.R.L.</span>
-                    <p className="text-xs text-muted-foreground leading-relaxed">
-                      Parque Industrial, Manzana 12, Santa Cruz de la Sierra. Horarios: Lun-Vie 08:00 - 18:00.
-                    </p>
+                  <div className="space-y-3">
+                    <label className="block text-xs font-bold uppercase text-muted-foreground">
+                      Selecciona la Tienda para Recoger en {city === 'cochabamba' ? 'Cochabamba' : 'Sucre'}
+                    </label>
+                    
+                    {city === 'cochabamba' ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedBranch('cocha-1')}
+                          className={`text-left p-4 rounded-xl border transition-all ${
+                            selectedBranch === 'cocha-1'
+                              ? 'border-primary bg-primary/5 text-primary ring-1 ring-primary'
+                              : 'bg-background hover:bg-muted text-foreground'
+                          }`}
+                        >
+                          <span className="font-extrabold text-sm block">Tienda 1</span>
+                          <span className="text-[10px] text-chart-3 font-bold block mt-2">✓ Stock disponible para recojo</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setSelectedBranch('cocha-2')}
+                          className={`text-left p-4 rounded-xl border transition-all ${
+                            selectedBranch === 'cocha-2'
+                              ? 'border-primary bg-primary/5 text-primary ring-1 ring-primary'
+                              : 'bg-background hover:bg-muted text-foreground'
+                          }`}
+                        >
+                          <span className="font-extrabold text-sm block">Tienda 2</span>
+                          <span className="text-[10px] text-chart-3 font-bold block mt-2">✓ Stock disponible para recojo</span>
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedBranch('sucre-1')}
+                          className={`text-left p-4 rounded-xl border transition-all ${
+                            selectedBranch === 'sucre-1'
+                              ? 'border-primary bg-primary/5 text-primary ring-1 ring-primary'
+                              : 'bg-background hover:bg-muted text-foreground'
+                          }`}
+                        >
+                          <span className="font-extrabold text-sm block">Tienda 1</span>
+                          <span className="text-[10px] text-chart-3 font-bold block mt-2">✓ Stock disponible</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setSelectedBranch('sucre-2')}
+                          className={`text-left p-4 rounded-xl border transition-all ${
+                            selectedBranch === 'sucre-2'
+                              ? 'border-primary bg-primary/5 text-primary ring-1 ring-primary'
+                              : 'bg-background hover:bg-muted text-foreground'
+                          }`}
+                        >
+                          <span className="font-extrabold text-sm block">Tienda 2</span>
+                          <span className="text-[10px] text-chart-3 font-bold block mt-2">✓ Stock disponible</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setSelectedBranch('sucre-3')}
+                          className={`text-left p-4 rounded-xl border transition-all ${
+                            selectedBranch === 'sucre-3'
+                              ? 'border-primary bg-primary/5 text-primary ring-1 ring-primary'
+                              : 'bg-background hover:bg-muted text-foreground'
+                          }`}
+                        >
+                          <span className="font-extrabold text-sm block">Tienda 3</span>
+                          <span className="text-[10px] text-chart-3 font-bold block mt-2">✓ Stock disponible</span>
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
 

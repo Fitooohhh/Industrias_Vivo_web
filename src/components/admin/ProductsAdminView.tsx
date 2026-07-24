@@ -20,6 +20,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { useProductStore } from '@/store/useProductStore'
 import { Product } from '@/services/products.service'
+import { CustomSelect } from '@/components/ui/custom-select'
 import { toast } from 'sonner'
 import Link from 'next/link'
 
@@ -28,13 +29,11 @@ const productFormSchema = zod.object({
   name: zod.string().min(3, 'El nombre debe tener al menos 3 caracteres'),
   sku: zod.string().min(3, 'El código SKU debe tener al menos 3 caracteres'),
   category: zod.string().min(1, 'Debe elegir una categoría'),
-  brand: zod.string().min(1, 'Debe ingresar una marca'),
   description: zod.string().min(5, 'La descripción es obligatoria'),
   shortDescription: zod.string().min(3, 'La descripción corta es obligatoria'),
   presentation: zod.string().min(1, 'Ej. Galón, Litro, Bidón'),
   price: zod.number().min(0.1, 'El precio de venta debe ser mayor a 0'),
   originalPrice: zod.number().optional(),
-  cost: zod.number().min(0.1, 'El costo de producción debe ser mayor a 0'),
   stock: zod.number().min(0, 'El stock no puede ser negativo'),
   minStock: zod.number().min(0, 'El stock mínimo no puede ser negativo'),
   targetMode: zod.enum(['hogar', 'empresas', 'both']),
@@ -53,7 +52,7 @@ export default function ProductsAdminView() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
 
   // React Hook Form
-  const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<ProductFormValues>({
+  const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<ProductFormValues>({
     resolver: zodResolver(productFormSchema)
   })
 
@@ -81,6 +80,8 @@ export default function ProductsAdminView() {
   const onSubmitProduct = (data: ProductFormValues) => {
     const formatted = {
       ...data,
+      brand: editingProduct ? editingProduct.brand : 'Industrias Vivo',
+      cost: editingProduct ? editingProduct.cost : 10.0,
       features: ['Fórmula concentrada', 'Biodegradable', 'Máxima efectividad'],
       usageInstructions: 'Aplicar según especificaciones del envase.',
       gallery: [data.image],
@@ -105,13 +106,11 @@ export default function ProductsAdminView() {
     setValue('name', product.name)
     setValue('sku', product.sku)
     setValue('category', product.category)
-    setValue('brand', product.brand)
     setValue('description', product.description)
     setValue('shortDescription', product.shortDescription)
     setValue('presentation', product.presentation)
     setValue('price', product.price)
     setValue('originalPrice', product.originalPrice)
-    setValue('cost', product.cost)
     setValue('stock', product.stock)
     setValue('minStock', product.minStock)
     setValue('targetMode', product.targetMode)
@@ -125,13 +124,11 @@ export default function ProductsAdminView() {
       name: '',
       sku: '',
       category: '',
-      brand: 'Vivo Hogar',
       description: '',
       shortDescription: '',
       presentation: '',
       price: 0,
       originalPrice: undefined,
-      cost: 0,
       stock: 0,
       minStock: 0,
       targetMode: 'hogar',
@@ -185,18 +182,16 @@ export default function ProductsAdminView() {
           />
         </div>
 
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <SlidersHorizontal className="h-4 w-4 text-muted-foreground" />
-          <select
+        <div className="w-full sm:w-56">
+          <CustomSelect
             value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
-            className="rounded-lg border bg-background px-3 py-1.5 text-xs font-semibold focus:border-primary outline-hidden"
-          >
-            <option value="all">Todas las Categorías</option>
-            {categories.map(c => (
-              <option key={c.id} value={c.id}>{c.name}</option>
-            ))}
-          </select>
+            onChange={(val) => setCategoryFilter(val)}
+            icon={<SlidersHorizontal className="h-3.5 w-3.5" />}
+            options={[
+              { value: 'all', label: 'Todas las Categorías' },
+              ...categories.map(c => ({ value: c.id, label: c.name }))
+            ]}
+          />
         </div>
       </div>
 
@@ -209,7 +204,6 @@ export default function ProductsAdminView() {
               <th className="p-4">Producto</th>
               <th className="p-4">Categoría</th>
               <th className="p-4">Modo</th>
-              <th className="p-4">Costo</th>
               <th className="p-4">Precio Venta</th>
               <th className="p-4">Stock</th>
               <th className="p-4">Estado</th>
@@ -235,7 +229,6 @@ export default function ProductsAdminView() {
                     {p.targetMode}
                   </span>
                 </td>
-                <td className="p-4 text-xs text-muted-foreground">Bs. {p.cost.toFixed(2)}</td>
                 <td className="p-4 font-bold">Bs. {p.price.toFixed(2)}</td>
                 <td className="p-4">
                   <span className={`font-bold ${p.stock <= p.minStock ? 'text-destructive' : 'text-foreground'}`}>
@@ -329,28 +322,16 @@ export default function ProductsAdminView() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold uppercase text-muted-foreground mb-1">Categoría</label>
-                  <select
-                    {...register('category')}
-                    className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:border-primary outline-hidden"
-                  >
-                    <option value="">-- Seleccionar --</option>
-                    {categories.map(c => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
-                  </select>
-                  {errors.category && <span className="text-[10px] text-destructive">{errors.category.message}</span>}
-                </div>
-                <div>
-                  <label className="block text-xs font-bold uppercase text-muted-foreground mb-1">Marca</label>
-                  <input
-                    {...register('brand')}
-                    placeholder="Vivo Hogar"
-                    className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:border-primary outline-hidden"
+                  <CustomSelect
+                    value={watch('category') || ''}
+                    onChange={(val) => setValue('category', val, { shouldValidate: true })}
+                    options={categories.map(c => ({ value: c.id, label: c.name }))}
+                    placeholder="-- Seleccionar Categoría --"
                   />
-                  {errors.brand && <span className="text-[10px] text-destructive">{errors.brand.message}</span>}
+                  {errors.category && <span className="text-[10px] text-destructive">{errors.category.message}</span>}
                 </div>
                 <div>
                   <label className="block text-xs font-bold uppercase text-muted-foreground mb-1">Presentación comercial</label>
@@ -363,24 +344,14 @@ export default function ProductsAdminView() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-xs font-bold uppercase text-muted-foreground mb-1">Costo Producción (Bs)</label>
-                  <input
-                    type="number"
-                    step="any"
-                    {...register('cost', { valueAsNumber: true })}
-                    className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:border-primary outline-hidden"
-                  />
-                  {errors.cost && <span className="text-[10px] text-destructive">{errors.cost.message}</span>}
-                </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold uppercase text-muted-foreground mb-1">Precio Venta (Bs)</label>
                   <input
                     type="number"
                     step="any"
                     {...register('price', { valueAsNumber: true })}
-                    className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:border-primary outline-hidden"
+                    className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:border-primary outline-hidden font-bold"
                   />
                   {errors.price && <span className="text-[10px] text-destructive">{errors.price.message}</span>}
                 </div>
@@ -416,14 +387,15 @@ export default function ProductsAdminView() {
                 </div>
                 <div>
                   <label className="block text-xs font-bold uppercase text-muted-foreground mb-1">Segmento Objetivo</label>
-                  <select
-                    {...register('targetMode')}
-                    className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:border-primary outline-hidden"
-                  >
-                    <option value="hogar">Hogar</option>
-                    <option value="empresas">Empresas / Industrial</option>
-                    <option value="both">Ambos segmentos</option>
-                  </select>
+                  <CustomSelect
+                    value={watch('targetMode') || 'hogar'}
+                    onChange={(val) => setValue('targetMode', val as any)}
+                    options={[
+                      { value: 'hogar', label: 'Hogar' },
+                      { value: 'empresas', label: 'Empresas / Industrial' },
+                      { value: 'both', label: 'Ambos segmentos' }
+                    ]}
+                  />
                 </div>
               </div>
 

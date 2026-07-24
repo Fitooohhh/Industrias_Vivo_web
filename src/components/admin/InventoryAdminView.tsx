@@ -12,286 +12,371 @@ import {
   ArrowDownLeft, 
   SlidersHorizontal, 
   AlertTriangle,
-  FileSpreadsheet,
+  MapPin,
+  ArrowRightLeft,
   CheckCircle,
-  HelpCircle
+  Building2
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { useInventoryStore, InventoryMovement } from '@/store/useInventoryStore'
+import { useInventoryStore } from '@/store/useInventoryStore'
 import { useProductStore } from '@/store/useProductStore'
+import { BranchStock } from '@/types/product.types'
 import { toast } from 'sonner'
 
-// Zod Schema for Inventory Movement
-const movementFormSchema = zod.object({
-  productId: zod.string().min(1, 'Debe seleccionar un producto'),
-  type: zod.enum(['entry', 'exit', 'adjustment']),
-  quantity: zod.number().min(1, 'La cantidad debe ser mayor a 0'),
-  reason: zod.string().min(5, 'Debe indicar un motivo o detalle de mínimo 5 caracteres')
-})
+export type BranchId = 'all' | keyof BranchStock
 
-type MovementFormValues = zod.infer<typeof movementFormSchema>
+const BRANCH_CONFIG: Record<keyof BranchStock, { name: string; city: string; address: string }> = {
+  'cocha-1': { name: 'Tienda 1', city: 'Cochabamba', address: 'Sucursal Tienda 1' },
+  'cocha-2': { name: 'Tienda 2', city: 'Cochabamba', address: 'Sucursal Tienda 2' },
+  'sucre-1': { name: 'Tienda 1', city: 'Sucre', address: 'Sucursal Tienda 1' },
+  'sucre-2': { name: 'Tienda 2', city: 'Sucre', address: 'Sucursal Tienda 2' },
+  'sucre-3': { name: 'Tienda 3', city: 'Sucre', address: 'Sucursal Tienda 3' },
+}
 
 export default function InventoryAdminView() {
   const { movements, registerMovement } = useInventoryStore()
-  const { products } = useProductStore()
+  const { products, updateBranchStock, transferBranchStock } = useProductStore()
 
   // States
+  const [selectedBranch, setSelectedBranch] = useState<BranchId>('all')
   const [searchTerm, setSearchTerm] = useState('')
-  const [typeFilter, setTypeFilter] = useState('all')
-  const [showModal, setShowModal] = useState(false)
+  const [showTransferModal, setShowTransferModal] = useState(false)
+  const [showAdjustModal, setShowAdjustModal] = useState(false)
+  
+  // Transfer Form State
+  const [transferProductId, setTransferProductId] = useState('')
+  const [transferFrom, setTransferFrom] = useState<keyof BranchStock>('cocha-1')
+  const [transferTo, setTransferTo] = useState<keyof BranchStock>('cocha-2')
+  const [transferQty, setTransferQty] = useState(5)
 
-  // React Hook Form
-  const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<MovementFormValues>({
-    resolver: zodResolver(movementFormSchema),
-    defaultValues: {
-      type: 'entry'
-    }
-  })
+  // Quick Adjust State
+  const [adjustProductId, setAdjustProductId] = useState('')
+  const [adjustBranchId, setAdjustBranchId] = useState<keyof BranchStock>('cocha-1')
+  const [adjustQty, setAdjustQty] = useState(10)
 
-  // Filtered movements list
-  const filteredMovements = useMemo(() => {
-    let list = [...movements]
+  // Filtered Products
+  const filteredProducts = useMemo(() => {
+    return products.filter(p => {
+      const matchSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || p.sku.toLowerCase().includes(searchTerm.toLowerCase())
+      return matchSearch
+    })
+  }, [products, searchTerm])
 
-    if (searchTerm.trim() !== '') {
-      const term = searchTerm.toLowerCase()
-      list = list.filter(m => m.productName.toLowerCase().includes(term))
-    }
-
-    if (typeFilter !== 'all') {
-      list = list.filter(m => m.type === typeFilter)
-    }
-
-    return list
-  }, [movements, searchTerm, typeFilter])
-
-  // Low Stock Alerts List
-  const lowStockProducts = useMemo(() => {
-    return products.filter(p => p.stock <= p.minStock)
+  // Low stock products count
+  const lowStockCount = useMemo(() => {
+    return products.filter(p => p.stock <= p.minStock).length
   }, [products])
 
-  const onSubmitMovement = (data: MovementFormValues) => {
-    const targetProd = products.find(p => p.id === data.productId)
+  // Execute Transfer
+  const handleExecuteTransfer = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!transferProductId) {
+      toast.error('Debe seleccionar un producto')
+      return
+    }
+    if (transferFrom === transferTo) {
+      toast.error('La sucursal de origen y destino deben ser distintas')
+      return
+    }
+    const targetProd = products.find(p => p.id === transferProductId)
     if (!targetProd) return
 
-    registerMovement({
-      productId: data.productId,
-      productName: targetProd.name,
-      type: data.type,
-      quantity: data.quantity,
-      reason: data.reason
+    transferBranchStock(transferProductId, transferFrom, transferTo, transferQty)
+    toast.success(`Transferencia completada`, {
+      description: `Se movieron ${transferQty} un. de ${BRANCH_CONFIG[transferFrom].name} a ${BRANCH_CONFIG[transferTo].name}`
     })
-
-    toast.success('Movimiento de stock registrado', {
-      description: `Tipo: ${data.type === 'entry' ? 'Entrada' : data.type === 'exit' ? 'Salida' : 'Ajuste'} | Cantidad: ${data.quantity}`
-    })
-
-    handleCloseModal()
+    setShowTransferModal(false)
   }
 
-  const handleCloseModal = () => {
-    reset({ productId: '', type: 'entry', quantity: 0, reason: '' })
-    setShowModal(false)
+  // Execute Quick Adjust
+  const handleExecuteAdjust = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!adjustProductId) return
+    
+    updateBranchStock(adjustProductId, adjustBranchId, adjustQty)
+    toast.success(`Stock actualizado en ${BRANCH_CONFIG[adjustBranchId].name}`, {
+      description: `Nuevo stock fijado: ${adjustQty} unidades`
+    })
+    setShowAdjustModal(false)
   }
 
   return (
     <div className="space-y-6">
       
       {/* Header */}
-      <div className="flex justify-between items-center border-b pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-4">
         <div>
-          <h1 className="text-2xl font-black text-foreground">Control de Inventario</h1>
-          <p className="text-xs text-muted-foreground">Registra entradas, salidas o ajustes de stock que alteran el catálogo en tiempo real.</p>
+          <h1 className="text-2xl font-black text-foreground">Gestión de Inventario por Sucursal</h1>
+          <p className="text-xs text-muted-foreground">Control aislado de stock para las 5 sucursales de Cochabamba y Sucre.</p>
         </div>
-        <Button onClick={() => setShowModal(true)} className="rounded-xl">
-          <Plus className="mr-1 h-5 w-5" />
-          Registrar Movimiento
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            onClick={() => setShowTransferModal(true)} 
+            variant="outline"
+            className="rounded-xl border-primary/30 text-primary hover:bg-primary/5"
+          >
+            <ArrowRightLeft className="mr-1.5 h-4 w-4" />
+            Transferir entre Tiendas
+          </Button>
+        </div>
       </div>
 
-      {/* Low stock alerts widgets */}
-      {lowStockProducts.length > 0 && (
-        <div className="border border-destructive/20 bg-destructive/5 rounded-2xl p-5 space-y-3">
-          <h3 className="text-sm font-bold text-destructive flex items-center gap-1.5 uppercase tracking-wider">
-            <AlertTriangle className="h-5 w-5 animate-pulse" />
-            Alertas de Stock Bajo / Crítico
-          </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {lowStockProducts.map(p => (
-              <div key={p.id} className="bg-background border rounded-xl p-3 flex justify-between items-center shadow-xs">
-                <div>
-                  <span className="font-bold text-xs block text-foreground leading-tight">{p.name}</span>
-                  <span className="text-[10px] text-muted-foreground">{p.presentation}</span>
-                </div>
-                <div className="text-right">
-                  <span className={`text-xs font-black px-2 py-0.5 rounded-full ${
-                    p.stock === 0 ? 'bg-destructive/10 text-destructive' : 'bg-amber-100 text-amber-800'
-                  }`}>
-                    {p.stock === 0 ? 'Sin Stock' : `${p.stock} un.`}
-                  </span>
-                  <span className="text-[9px] text-muted-foreground block mt-1">Mínimo: {p.minStock}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Branch Tabs Filter */}
+      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
+        <button
+          onClick={() => setSelectedBranch('all')}
+          className={`px-4 py-2.5 rounded-2xl text-xs font-black transition-all flex items-center gap-2 whitespace-nowrap ${
+            selectedBranch === 'all'
+              ? 'bg-primary text-primary-foreground shadow-md'
+              : 'bg-background border hover:bg-muted text-foreground'
+          }`}
+        >
+          <Building2 className="h-4 w-4" />
+          <span>Todas las Sucursales</span>
+        </button>
+
+        {(Object.keys(BRANCH_CONFIG) as Array<keyof BranchStock>).map((bId) => {
+          const cfg = BRANCH_CONFIG[bId]
+          return (
+            <button
+              key={bId}
+              onClick={() => setSelectedBranch(bId)}
+              className={`px-4 py-2.5 rounded-2xl text-xs font-extrabold transition-all flex items-center gap-2 whitespace-nowrap ${
+                selectedBranch === bId
+                  ? 'bg-primary text-primary-foreground shadow-md'
+                  : 'bg-background border hover:bg-muted text-foreground'
+              }`}
+            >
+              <MapPin className="h-3.5 w-3.5 text-primary-foreground" />
+              <span>[{cfg.city}] {cfg.name}</span>
+            </button>
+          )
+        })}
+      </div>
 
       {/* Filter and Search Bar */}
-      <div className="bg-background border p-4 rounded-xl flex flex-col sm:flex-row gap-4 items-center justify-between">
-        <div className="relative w-full sm:max-w-xs">
-          <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+      <div className="bg-background border p-4 rounded-2xl flex flex-col sm:flex-row gap-4 items-center justify-between shadow-xs">
+        <div className="relative w-full sm:max-w-md">
+          <Search className="absolute left-3.5 top-3 h-4 w-4 text-muted-foreground" />
           <input
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Buscar por nombre de producto..."
-            className="w-full rounded-lg border bg-background pl-9 pr-4 py-2 text-sm focus:border-primary outline-hidden"
+            placeholder="Buscar por código SKU o nombre de producto..."
+            className="w-full rounded-xl border bg-background pl-10 pr-4 py-2.5 text-sm focus:border-primary outline-hidden font-medium"
           />
         </div>
 
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <SlidersHorizontal className="h-4 w-4 text-muted-foreground" />
-          <select
-            value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value)}
-            className="rounded-lg border bg-background px-3 py-1.5 text-xs font-semibold focus:border-primary outline-hidden"
-          >
-            <option value="all">Todos los Movimientos</option>
-            <option value="entry">Entradas (+)</option>
-            <option value="exit">Salidas (-)</option>
-            <option value="adjustment">Ajustes (Reconciliación)</option>
-          </select>
+        <div className="text-xs text-muted-foreground font-semibold">
+          Mostrando productos para: <strong className="text-foreground">{selectedBranch === 'all' ? 'Consolidado General' : BRANCH_CONFIG[selectedBranch].name}</strong>
         </div>
       </div>
 
-      {/* Movements Table */}
+      {/* Products Branch Matrix Table */}
       <div className="border rounded-2xl overflow-hidden bg-background shadow-xs overflow-x-auto">
-        <table className="w-full text-left border-collapse min-w-[700px]">
+        <table className="w-full text-left border-collapse min-w-[850px]">
           <thead>
-            <tr className="bg-muted/40 border-b text-xs text-muted-foreground font-bold">
-              <th className="p-4">Fecha / Hora</th>
-              <th className="p-4">Producto</th>
-              <th className="p-4">Tipo</th>
-              <th className="p-4">Cantidad</th>
-              <th className="p-4">Motivo / Detalle</th>
-              <th className="p-4">Administrador</th>
+            <tr className="bg-muted/40 border-b text-xs text-muted-foreground font-extrabold uppercase tracking-wider">
+              <th className="p-4">SKU / Producto</th>
+              <th className="p-4">Categoría</th>
+              {selectedBranch === 'all' ? (
+                <>
+                  <th className="p-3 text-center bg-primary/5 border-l">Cocha 1</th>
+                  <th className="p-3 text-center bg-primary/5">Cocha 2</th>
+                  <th className="p-3 text-center bg-secondary/10 border-l">Sucre 1</th>
+                  <th className="p-3 text-center bg-secondary/10">Sucre 2</th>
+                  <th className="p-3 text-center bg-secondary/10">Sucre 3</th>
+                  <th className="p-4 text-right font-black border-l">Total General</th>
+                </>
+              ) : (
+                <>
+                  <th className="p-4 text-center">Stock en {BRANCH_CONFIG[selectedBranch].name}</th>
+                  <th className="p-4 text-center">Estado de Stock</th>
+                  <th className="p-4 text-right">Acción</th>
+                </>
+              )}
             </tr>
           </thead>
           <tbody className="divide-y text-sm">
-            {filteredMovements.map(m => (
-              <tr key={m.id} className="hover:bg-muted/10">
-                <td className="p-4 text-xs text-muted-foreground whitespace-nowrap">
-                  <span>{m.date}</span>
-                  <span className="block text-[10px]">{m.time}</span>
-                </td>
-                <td className="p-4 font-bold text-foreground">{m.productName}</td>
-                <td className="p-4">
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase flex items-center gap-1 w-max ${
-                    m.type === 'entry' 
-                      ? 'bg-chart-3/15 text-chart-3' 
-                      : m.type === 'exit' 
-                      ? 'bg-destructive/10 text-destructive' 
-                      : 'bg-indigo-100 text-indigo-800'
-                  }`}>
-                    {m.type === 'entry' ? <ArrowDownLeft className="h-3 w-3" /> : m.type === 'exit' ? <ArrowUpRight className="h-3 w-3" /> : <PackageOpen className="h-3 w-3" />}
-                    {m.type === 'entry' ? 'Entrada' : m.type === 'exit' ? 'Salida' : 'Ajuste'}
-                  </span>
-                </td>
-                <td className={`p-4 font-extrabold ${
-                  m.type === 'entry' ? 'text-chart-3' : m.type === 'exit' ? 'text-destructive' : 'text-foreground'
-                }`}>
-                  {m.type === 'entry' ? `+${m.quantity}` : m.type === 'exit' ? `-${m.quantity}` : `${m.quantity}`}
-                </td>
-                <td className="p-4 text-xs text-muted-foreground max-w-xs truncate" title={m.reason}>
-                  {m.reason}
-                </td>
-                <td className="p-4 text-xs font-semibold text-foreground">{m.user}</td>
-              </tr>
-            ))}
-            {filteredMovements.length === 0 && (
-              <tr>
-                <td colSpan={6} className="p-8 text-center text-muted-foreground italic">
-                  No se registraron movimientos en el almacén.
-                </td>
-              </tr>
-            )}
+            {filteredProducts.map(p => {
+              const bStock = p.branchesStock || {
+                'cocha-1': Math.floor(p.stock * 0.3),
+                'cocha-2': Math.floor(p.stock * 0.2),
+                'sucre-1': Math.floor(p.stock * 0.2),
+                'sucre-2': Math.floor(p.stock * 0.15),
+                'sucre-3': Math.floor(p.stock * 0.15)
+              }
+
+              const currentBranchQty = selectedBranch !== 'all' ? bStock[selectedBranch] : p.stock
+
+              return (
+                <tr key={p.id} className="hover:bg-muted/20 transition-colors">
+                  <td className="p-4">
+                    <div className="flex items-center gap-3">
+                      <img src={p.image} alt={p.name} className="h-10 w-10 rounded-xl object-cover border" />
+                      <div>
+                        <span className="font-mono text-[10px] text-muted-foreground font-bold block">{p.sku}</span>
+                        <span className="font-extrabold text-foreground block text-sm">{p.name}</span>
+                        <span className="text-xs text-muted-foreground block">{p.presentation}</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="p-4 text-xs font-semibold capitalize text-muted-foreground">{p.category}</td>
+
+                  {selectedBranch === 'all' ? (
+                    <>
+                      <td className="p-3 text-center font-bold text-xs bg-primary/5 border-l">{bStock['cocha-1']}</td>
+                      <td className="p-3 text-center font-bold text-xs bg-primary/5">{bStock['cocha-2']}</td>
+                      <td className="p-3 text-center font-bold text-xs bg-secondary/10 border-l">{bStock['sucre-1']}</td>
+                      <td className="p-3 text-center font-bold text-xs bg-secondary/10">{bStock['sucre-2']}</td>
+                      <td className="p-3 text-center font-bold text-xs bg-secondary/10">{bStock['sucre-3']}</td>
+                      <td className="p-4 text-right font-black text-base text-primary border-l">{p.stock} un.</td>
+                    </>
+                  ) : (
+                    <>
+                      <td className="p-4 text-center font-black text-base text-foreground">
+                        {currentBranchQty} un.
+                      </td>
+                      <td className="p-4 text-center">
+                        <span className={`text-[10px] font-black px-3 py-1 rounded-full uppercase ${
+                          currentBranchQty === 0
+                            ? 'bg-destructive/10 text-destructive'
+                            : currentBranchQty <= p.minStock
+                            ? 'bg-amber-100 text-amber-800'
+                            : 'bg-chart-3/15 text-chart-3'
+                        }`}>
+                          {currentBranchQty === 0 ? 'Agotado en Tienda' : currentBranchQty <= p.minStock ? 'Stock Bajo' : 'Disponible'}
+                        </span>
+                      </td>
+                      <td className="p-4 text-right">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setAdjustProductId(p.id)
+                            setAdjustBranchId(selectedBranch)
+                            setAdjustQty(currentBranchQty)
+                            setShowAdjustModal(true)
+                          }}
+                          className="rounded-xl text-xs font-bold"
+                        >
+                          Ajustar Stock
+                        </Button>
+                      </td>
+                    </>
+                  )}
+                </tr>
+              )
+            })}
           </tbody>
         </table>
       </div>
 
-      {/* Modal Form */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-background border rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl space-y-6">
+      {/* Transfer Stock Modal */}
+      {showTransferModal && (
+        <div className="fixed inset-0 z-100 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-background border rounded-3xl p-6 md:p-8 max-w-lg w-full shadow-2xl space-y-6">
             <div className="flex justify-between items-center border-b pb-4">
-              <h3 className="font-bold text-lg">Registrar Movimiento de Almacén</h3>
-              <button onClick={handleCloseModal} className="text-muted-foreground hover:text-foreground">
+              <div className="flex items-center gap-2 text-primary">
+                <ArrowRightLeft className="h-5 w-5" />
+                <h3 className="font-extrabold text-lg">Transferir Inventario entre Tiendas</h3>
+              </div>
+              <button onClick={() => setShowTransferModal(false)} className="text-muted-foreground hover:text-foreground">
                 ✕
               </button>
             </div>
 
-            <form onSubmit={handleSubmit(onSubmitMovement)} className="space-y-4">
+            <form onSubmit={handleExecuteTransfer} className="space-y-4">
               <div>
                 <label className="block text-xs font-bold uppercase text-muted-foreground mb-1">Producto</label>
                 <select
-                  {...register('productId')}
-                  className="w-full rounded-lg border bg-background px-3 py-2.5 text-sm focus:border-primary focus:outline-hidden"
+                  value={transferProductId}
+                  onChange={(e) => setTransferProductId(e.target.value)}
+                  className="w-full rounded-xl border bg-background px-3 py-2.5 text-sm focus:border-primary outline-hidden font-bold"
                 >
-                  <option value="">-- Seleccionar --</option>
+                  <option value="">-- Selecciona el Producto --</option>
                   {products.map(p => (
                     <option key={p.id} value={p.id}>
-                      [{p.sku}] {p.name} ({p.presentation}) - Stock: {p.stock} un.
+                      [{p.sku}] {p.name} ({p.presentation}) - Total: {p.stock} un.
                     </option>
                   ))}
                 </select>
-                {errors.productId && <span className="text-[10px] text-destructive mt-1 block">{errors.productId.message}</span>}
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold uppercase text-muted-foreground mb-1">Tipo Movimiento</label>
+                  <label className="block text-xs font-bold uppercase text-muted-foreground mb-1">Origen (Sale de)</label>
                   <select
-                    {...register('type')}
-                    className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:border-primary outline-hidden"
+                    value={transferFrom}
+                    onChange={(e) => setTransferFrom(e.target.value as keyof BranchStock)}
+                    className="w-full rounded-xl border bg-background px-3 py-2.5 text-sm focus:border-primary outline-hidden font-bold"
                   >
-                    <option value="entry">Entrada (+)</option>
-                    <option value="exit">Salida (-)</option>
-                    <option value="adjustment">Ajuste (Fijar Absoluto)</option>
+                    {(Object.keys(BRANCH_CONFIG) as Array<keyof BranchStock>).map(bId => (
+                      <option key={bId} value={bId}>[{BRANCH_CONFIG[bId].city}] {BRANCH_CONFIG[bId].name}</option>
+                    ))}
                   </select>
                 </div>
+
                 <div>
-                  <label className="block text-xs font-bold uppercase text-muted-foreground mb-1">Cantidad</label>
-                  <input
-                    type="number"
-                    {...register('quantity', { valueAsNumber: true })}
-                    className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:border-primary outline-hidden"
-                  />
-                  {errors.quantity && <span className="text-[10px] text-destructive mt-1 block">{errors.quantity.message}</span>}
+                  <label className="block text-xs font-bold uppercase text-muted-foreground mb-1">Destino (Entra a)</label>
+                  <select
+                    value={transferTo}
+                    onChange={(e) => setTransferTo(e.target.value as keyof BranchStock)}
+                    className="w-full rounded-xl border bg-background px-3 py-2.5 text-sm focus:border-primary outline-hidden font-bold"
+                  >
+                    {(Object.keys(BRANCH_CONFIG) as Array<keyof BranchStock>).map(bId => (
+                      <option key={bId} value={bId}>[{BRANCH_CONFIG[bId].city}] {BRANCH_CONFIG[bId].name}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase text-muted-foreground mb-1">Motivo / Detalle</label>
-                <textarea
-                  {...register('reason')}
-                  rows={3}
-                  placeholder="Ej. Ingreso por fin de lote de producción #923, merma por envase roto..."
-                  className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:border-primary outline-hidden resize-none"
+                <label className="block text-xs font-bold uppercase text-muted-foreground mb-1">Cantidad a Transferir</label>
+                <input
+                  type="number"
+                  min={1}
+                  value={transferQty}
+                  onChange={(e) => setTransferQty(Number(e.target.value))}
+                  className="w-full rounded-xl border bg-background px-3 py-2.5 text-sm focus:border-primary outline-hidden font-extrabold"
                 />
-                {errors.reason && <span className="text-[10px] text-destructive mt-1 block">{errors.reason.message}</span>}
               </div>
 
               <div className="flex gap-3 justify-end border-t pt-4">
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={handleCloseModal}
-                  className="rounded-lg"
-                >
+                <Button type="button" variant="outline" onClick={() => setShowTransferModal(false)} className="rounded-xl">
                   Cancelar
                 </Button>
-                <Button type="submit" className="rounded-lg font-bold">
-                  Registrar
+                <Button type="submit" className="rounded-xl font-bold">
+                  Ejecutar Transferencia
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Adjust Stock Modal */}
+      {showAdjustModal && (
+        <div className="fixed inset-0 z-100 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-background border rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4">
+            <h3 className="font-extrabold text-base border-b pb-3">Ajustar Stock Físico</h3>
+            <form onSubmit={handleExecuteAdjust} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold uppercase text-muted-foreground mb-1">Nueva Cantidad de Stock</label>
+                <input
+                  type="number"
+                  min={0}
+                  value={adjustQty}
+                  onChange={(e) => setAdjustQty(Number(e.target.value))}
+                  className="w-full rounded-xl border bg-background px-4 py-2.5 text-lg font-black text-primary focus:border-primary outline-hidden"
+                />
+              </div>
+              <div className="flex gap-3 justify-end border-t pt-3">
+                <Button type="button" variant="outline" onClick={() => setShowAdjustModal(false)} className="rounded-xl">
+                  Cancelar
+                </Button>
+                <Button type="submit" className="rounded-xl font-bold">
+                  Guardar Ajuste
                 </Button>
               </div>
             </form>

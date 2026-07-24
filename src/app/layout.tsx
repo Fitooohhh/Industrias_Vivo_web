@@ -13,6 +13,7 @@ export const metadata: Metadata = {
 };
 
 import GoogleAuthProviderWrapper from "@/components/providers/GoogleAuthProviderWrapper";
+import CitySelectionModal from "@/components/common/CitySelectionModal";
 
 export default function RootLayout({
   children,
@@ -27,6 +28,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col bg-background text-foreground transition-colors duration-300" suppressHydrationWarning>
         <GoogleAuthProviderWrapper>
+          <CitySelectionModal />
           <AnimatedWaterBackground />
           <Navbar />
           <main className="flex-grow flex flex-col">

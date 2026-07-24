@@ -1,3 +1,11 @@
+export interface BranchStock {
+  'cocha-1': number // Tienda 1 - Blanco Galindo (Cochabamba)
+  'cocha-2': number // Tienda 2 - América y Pando (Cochabamba)
+  'sucre-1': number // Tienda 1 - Plaza 25 de Mayo (Sucre)
+  'sucre-2': number // Tienda 2 - Av. Jaime Mendoza (Sucre)
+  'sucre-3': number // Tienda 3 - Mercado Campesino (Sucre)
+}
+
 export interface Product {
   id: string
   name: string
@@ -13,6 +21,7 @@ export interface Product {
   originalPrice?: number
   cost: number
   stock: number
+  branchesStock?: BranchStock
   minStock: number
   status: 'active' | 'inactive'
   image: string

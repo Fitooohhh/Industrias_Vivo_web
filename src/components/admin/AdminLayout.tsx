@@ -83,7 +83,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     { name: 'Promociones', href: '/admin/promociones', icon: Sparkles },
     { name: 'Inventario', href: '/admin/inventario', icon: PackageOpen },
     { name: 'Pedidos', href: '/admin/pedidos', icon: ShoppingBag },
-    { name: 'Cotizaciones', href: '/admin/cotizaciones', icon: FileSpreadsheet },
     { name: 'Clientes', href: '/admin/clientes', icon: Users },
     { name: 'Informes', href: '/admin/reportes', icon: TrendingUp },
     { name: 'Configuración', href: '/admin/configuracion', icon: Settings },

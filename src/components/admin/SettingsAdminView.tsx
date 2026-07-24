@@ -82,66 +82,8 @@ export default function SettingsAdminView() {
       <div className="bg-background border rounded-3xl p-6 md:p-8 shadow-xl">
         <form onSubmit={handleSubmit(onSubmitSettings)} className="space-y-6">
           
-          {/* E-Commerce parameters */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5 uppercase tracking-wider border-l-2 border-primary pl-2">
-              <Sliders className="h-4.5 w-4.5 text-primary" />
-              Parámetros de Venta y Despacho
-            </h3>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-bold uppercase text-muted-foreground mb-1">Monto Mínimo Envío Gratis (Bs)</label>
-                <div className="relative">
-                  <Truck className="absolute left-3 top-3 h-4.5 w-4.5 text-muted-foreground" />
-                  <input
-                    type="number"
-                    {...register('freeShippingMin', { valueAsNumber: true })}
-                    className="w-full rounded-lg border bg-background pl-9 pr-3 py-2 text-sm focus:border-primary outline-hidden"
-                  />
-                </div>
-                {errors.freeShippingMin && <span className="text-[10px] text-destructive mt-1 block">{errors.freeShippingMin.message}</span>}
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold uppercase text-muted-foreground mb-1">Costo de Envío Base (Bs)</label>
-                <input
-                  type="number"
-                  {...register('shippingCostDefault', { valueAsNumber: true })}
-                  className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:border-primary outline-hidden"
-                />
-                {errors.shippingCostDefault && <span className="text-[10px] text-destructive mt-1 block">{errors.shippingCostDefault.message}</span>}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-bold uppercase text-muted-foreground mb-1">Compra Mínima Descuento Volumen (Bs)</label>
-                <input
-                  type="number"
-                  {...register('volumeDiscountMin', { valueAsNumber: true })}
-                  className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:border-primary outline-hidden"
-                />
-                {errors.volumeDiscountMin && <span className="text-[10px] text-destructive mt-1 block">{errors.volumeDiscountMin.message}</span>}
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold uppercase text-muted-foreground mb-1">Porcentaje Descuento Volumen (%)</label>
-                <div className="relative">
-                  <Percent className="absolute left-3 top-3 h-4.5 w-4.5 text-muted-foreground" />
-                  <input
-                    type="number"
-                    {...register('volumeDiscountPercent', { valueAsNumber: true })}
-                    className="w-full rounded-lg border bg-background pl-9 pr-3 py-2 text-sm focus:border-primary outline-hidden"
-                  />
-                </div>
-                {errors.volumeDiscountPercent && <span className="text-[10px] text-destructive mt-1 block">{errors.volumeDiscountPercent.message}</span>}
-              </div>
-            </div>
-          </div>
-
           {/* Contact Details */}
-          <div className="space-y-4 pt-6 border-t">
+          <div className="space-y-4">
             <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5 uppercase tracking-wider border-l-2 border-primary pl-2">
               <Phone className="h-4.5 w-4.5 text-primary" />
               Canales de Soporte Corporativo

@@ -6,7 +6,7 @@ import { PhoneCall } from 'lucide-react'
 export default function WhatsAppButton() {
   const handleWhatsAppClick = () => {
     // Redirigir a enlace de WhatsApp simulado o real
-    window.open('https://wa.me/59170000000?text=Hola%20Industrias%20Vivo,%20quisiera%20solicitar%20información%20sobre%20sus%20productos.', '_blank')
+    window.open('https://wa.me/59177112500?text=Hola%20Industrias%20Vivo,%20quisiera%20solicitar%20información%20sobre%20sus%20productos.', '_blank')
   }
 
   return (

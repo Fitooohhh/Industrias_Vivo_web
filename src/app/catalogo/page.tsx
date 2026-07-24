@@ -18,6 +18,7 @@ import { Button } from '@/components/ui/button'
 import { ProductsService, Product } from '@/services/products.service'
 import { useAppStore } from '@/store/useAppStore'
 import { useCartStore } from '@/store/useCartStore'
+import { CustomSelect } from '@/components/ui/custom-select'
 import { toast } from 'sonner'
 import Link from 'next/link'
 
@@ -187,18 +188,18 @@ export default function CatalogoPage() {
 
             <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
               {/* Sort Select */}
-              <div className="flex items-center gap-2 relative">
-                <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
-                <select
+              <div className="w-48 sm:w-56">
+                <CustomSelect
                   value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  className="rounded-lg border bg-background px-3 py-1.5 text-xs font-semibold focus:border-primary focus:outline-hidden"
-                >
-                  <option value="default">Recomendados</option>
-                  <option value="price-asc">Precio: Menor a Mayor</option>
-                  <option value="price-desc">Precio: Mayor a Menor</option>
-                  <option value="rating">Popularidad</option>
-                </select>
+                  onChange={(val) => setSortBy(val)}
+                  icon={<ArrowUpDown className="h-3.5 w-3.5" />}
+                  options={[
+                    { value: 'default', label: 'Recomendados' },
+                    { value: 'price-asc', label: 'Precio: Menor a Mayor' },
+                    { value: 'price-desc', label: 'Precio: Mayor a Menor' },
+                    { value: 'rating', label: 'Popularidad' }
+                  ]}
+                />
               </div>
 
               {/* View Toggle */}

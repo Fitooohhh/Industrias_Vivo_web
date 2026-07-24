@@ -72,7 +72,7 @@ export default function ContactSection() {
                 <Phone className="h-6 w-6 text-secondary-foreground flex-shrink-0 mt-1" />
                 <div>
                   <h4 className="font-bold text-foreground">Teléfono</h4>
-                  <p className="text-sm text-muted-foreground">+591 3 3456789 / +591 70000000</p>
+                  <p className="text-sm text-muted-foreground">+591 70333911</p>
                 </div>
               </div>
 
