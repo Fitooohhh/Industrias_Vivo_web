@@ -11,12 +11,9 @@ import {
   CreditCard, 
   QrCode, 
   Upload, 
-  ShoppingBag, 
   ArrowRight, 
   ArrowLeft,
   Store,
-  FileText,
-  Printer,
   ChevronRight
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -27,6 +24,7 @@ import { useOrdersStore } from '@/store/useOrdersStore'
 import { useAppStore } from '@/store/useAppStore'
 import { toast } from 'sonner'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 
 // Validation Schemas
@@ -46,15 +44,15 @@ type CheckoutFormValues = zod.infer<typeof checkoutSchema>
 
 export default function CheckoutClient() {
   const { city } = useAppStore()
-  const { items, getSubtotal, getDiscount, getShippingCost, getTotal, clearCart } = useCartStore()
+  const { items, getSubtotal, getDiscount, getShippingCost, clearCart } = useCartStore()
   const { addresses } = useUserStore()
   const { user } = useAuthStore()
   const { addOrder } = useOrdersStore()
+  const router = useRouter()
 
   // State
   const [currentStep, setCurrentStep] = useState(1)
   const [selectedBranch, setSelectedBranch] = useState<string>(city === 'cochabamba' ? 'cocha-1' : 'sucre-1')
-  const [orderCompleted, setOrderCompleted] = useState<any>(null)
   const [qrFile, setQrFile] = useState<File | null>(null)
   const [mounted, setMounted] = useState(false)
 
@@ -83,7 +81,7 @@ export default function CheckoutClient() {
     )
   }
 
-  if (items.length === 0 && !orderCompleted) {
+  if (items.length === 0) {
     return (
       <div className="mx-auto max-w-7xl px-4 py-16 text-center space-y-4">
         <h2 className="text-2xl font-black text-foreground">Tu carrito está vacío</h2>
@@ -150,117 +148,12 @@ export default function CheckoutClient() {
       observations: data.paymentMethod === 'qr' ? 'Comprobante de transferencia QR adjunto.' : 'Pago en efectivo contra entrega.'
     })
 
-    setOrderCompleted({
-      id: orderId,
-      items: [...items],
-      subtotal,
-      discount,
-      shipping,
-      total,
-      deliveryMethod: data.deliveryMethod,
-      paymentMethod: data.paymentMethod,
-      address: { name: user?.name, address: addressStr, city: 'Santa Cruz' },
-      status: data.paymentMethod === 'cash' ? 'recibido' : 'pendiente_pago'
-    })
-    
     // Clear shopping cart
     clearCart()
     toast.success('¡Pedido procesado con éxito!')
-  }
-
-  const handlePrint = () => {
-    window.print()
-  }
-
-  // Render Completed screen
-  if (orderCompleted) {
-    return (
-      <div className="mx-auto max-w-2xl px-4 py-12 space-y-6 print:p-0">
-        <div className="border bg-background rounded-3xl p-6 md:p-10 shadow-xl space-y-6 text-center print:border-0 print:shadow-none">
-          <div className="inline-flex p-3 rounded-full bg-chart-3/15 text-chart-3 mb-2 animate-bounce print:hidden">
-            <CheckCircle className="h-10 w-10" />
-          </div>
-          <h1 className="text-3xl font-black text-foreground">¡Gracias por tu Compra!</h1>
-          <p className="text-sm text-muted-foreground print:hidden">
-            Tu pedido ha sido recibido y ya se encuentra registrado en nuestro sistema de distribución de fábrica.
-          </p>
-
-          {/* Receipt Content */}
-          <div className="border rounded-2xl p-6 text-left space-y-4 bg-muted/20">
-            <div className="flex justify-between items-center border-b pb-3">
-              <div>
-                <span className="text-xs text-muted-foreground block">Código de Pedido</span>
-                <span className="font-mono font-bold text-primary text-lg">{orderCompleted.id}</span>
-              </div>
-              <div className="text-right">
-                <span className="text-xs text-muted-foreground block">Estado del Pedido</span>
-                <span className="text-xs font-bold text-chart-3 bg-chart-3/10 px-2 py-0.5 rounded-full uppercase">
-                  {orderCompleted.status}
-                </span>
-              </div>
-            </div>
-
-            {/* Address */}
-            <div className="space-y-1 text-sm border-b pb-3">
-              <span className="text-xs font-bold uppercase text-muted-foreground block">Datos de Entrega</span>
-              <span className="font-bold text-foreground block">{orderCompleted.address.name}</span>
-              <span className="text-muted-foreground block text-xs">{orderCompleted.address.address}, {orderCompleted.address.city}</span>
-            </div>
-
-            {/* Items */}
-            <div className="space-y-2 border-b pb-3">
-              <span className="text-xs font-bold uppercase text-muted-foreground block">Productos</span>
-              <div className="divide-y divide-muted">
-                {orderCompleted.items.map((item: any) => (
-                  <div key={item.id} className="py-2 flex justify-between text-xs">
-                    <span>{item.name} ({item.presentation}) x{item.quantity}</span>
-                    <span className="font-bold">Bs. {(item.price * item.quantity).toFixed(2)}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Financial Summary */}
-            <div className="space-y-1.5 text-xs text-muted-foreground">
-              <div className="flex justify-between">
-                <span>Subtotal</span>
-                <span className="font-bold text-foreground">Bs. {orderCompleted.subtotal.toFixed(2)}</span>
-              </div>
-              {orderCompleted.discount > 0 && (
-                <div className="flex justify-between text-chart-3">
-                  <span>Descuento por Volumen</span>
-                  <span className="font-bold">- Bs. {orderCompleted.discount.toFixed(2)}</span>
-                </div>
-              )}
-              <div className="flex justify-between">
-                <span>Envío</span>
-                <span className="font-bold text-foreground">
-                  {orderCompleted.shipping === 0 ? 'Gratuito' : `Bs. ${orderCompleted.shipping.toFixed(2)}`}
-                </span>
-              </div>
-              <div className="flex justify-between border-t pt-2 text-sm text-foreground font-black">
-                <span>Total Facturado</span>
-                <span>Bs. {orderCompleted.total.toFixed(2)}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Action buttons */}
-          <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t print:hidden justify-center">
-            <Button onClick={handlePrint} variant="outline" className="rounded-xl flex items-center gap-2">
-              <Printer className="h-4.5 w-4.5" />
-              Imprimir Comprobante
-            </Button>
-            <Link href="/perfil">
-              <Button className="rounded-xl flex items-center gap-2">
-                <ShoppingBag className="h-4.5 w-4.5" />
-                Seguimiento de Pedidos
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </div>
-    )
+    
+    // Redirect to tracking page
+    router.push(`/pedidos/${orderId}`)
   }
 
   return (

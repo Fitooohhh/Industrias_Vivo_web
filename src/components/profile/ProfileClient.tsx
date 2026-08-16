@@ -15,7 +15,9 @@ import {
   Star,
   Map,
   Compass,
-  ShoppingCart
+  ShoppingCart,
+  Truck,
+  ExternalLink
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -418,6 +420,7 @@ export default function ProfileClient() {
                       <th className="p-4">Total</th>
                       <th className="p-4">Estado</th>
                       <th className="p-4">Método</th>
+                      <th className="p-4">Acciones</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y text-sm">
@@ -440,11 +443,20 @@ export default function ProfileClient() {
                         <td className="p-4 text-xs text-muted-foreground capitalize">
                           {ord.paymentMethod === 'cash' ? 'efectivo' : ord.paymentMethod === 'card' ? 'tarjeta' : 'QR'}
                         </td>
+                        <td className="p-4">
+                          <Link 
+                            href={`/pedidos/${ord.id}`}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 text-primary text-xs font-bold hover:bg-primary/20 transition-colors"
+                          >
+                            <Truck className="h-3.5 w-3.5" />
+                            <span>Seguimiento</span>
+                          </Link>
+                        </td>
                       </tr>
                     ))}
                     {userOrders.length === 0 && (
                       <tr>
-                        <td colSpan={5} className="p-8 text-center text-muted-foreground italic">
+                        <td colSpan={6} className="p-8 text-center text-muted-foreground italic">
                           No tienes pedidos registrados.
                         </td>
                       </tr>
